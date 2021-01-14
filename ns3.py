@@ -1,0 +1,95 @@
+import numpy as np
+import argparse
+import random
+import time
+import math
+from ns3simulation import NS3Simulation, NS3LTESimulation, NS3NRSimulation
+from ns3simulationcontainer import NS3SimulationContainer
+from plot import Plot
+
+def instantiateSimulation(args):
+    if   args.gen == '4G':
+        simulation = NS3LTESimulation(args.gen, args.numberOfueNodes, args.simTime, args.radius, args.height, args.seed, args.comment)
+    elif args.gen == '5G':
+        simulation = NS3NRSimulation(args.gen, args.numberOfueNodes, args.simTime, args.radius, args.height, args.numerology, args.seed, args.comment)
+    return simulation
+
+parser = argparse.ArgumentParser(description='NS-3 Python wrapper')
+
+parser.add_argument("--gen", choices=["4G", "5G"], required=True, help="5G or 4G")
+parser.add_argument("--nUEs", type=int, dest='numberOfueNodes', default=1, help="The number of deployed User Equipments")
+parser.add_argument("--time", type=int, dest='simTime', default=22, help="Total simulation time (including start and end times)")
+parser.add_argument("--radius", type=int, dest='radius', default=2, help="Radius of the circle where the UEs are randomly placed")
+parser.add_argument("--height", type=int, dest='height', default=1, help="Height of the UEs")
+parser.add_argument("--num", type=int, dest='numerology', default=3, help="Value defining the subcarrier spaceing and symbol lenght")
+parser.add_argument("--seed", type=int, dest='seed', default=0, help="Seed of rand function to use in the simulation")
+parser.add_argument("--comment", dest='comment', default='', help="Height of the UEs")
+parser.add_argument("--gdb", action='store_true', help="Run the program under gdb")
+parser.add_argument("--iterate", nargs=2, help="Specify the interval over which iterate")
+parser.add_argument("--dry", action='store_true', help="Runs the script without running the simulator and the plots")
+parser.add_argument("--rand", type=int, help="Enables the randomization of seeds and specifies the numer of iteration needed")
+parser.add_argument("--threads", type=int, default=1, help="Specifies the maximum number of threads to be used at once")
+parser.add_argument("--maxLat", type=int, dest='highestBin', default=20, help="Specifies the maximum latency displayed in plots")
+parser.add_argument("-p", "--plot", action='store_true', dest='plot', help="Enables plot creation for each simulation output")
+parser.add_argument("-P", "--plot-summary", action='store_true', dest='plot_summary', help="Enables summary plot creation")
+
+
+args = parser.parse_args()
+
+# OOP code
+iterate = args.iterate != None
+rand = args.rand != None
+
+if iterate:
+    it   = args.iterate[0]
+    start= int(args.iterate[1].split(':')[0])
+    pace = int(args.iterate[1].split(':')[1])
+    end  = int(args.iterate[1].split(':')[2])
+else:
+    start = 0
+    pace = 1
+    end = 0
+
+if rand:
+    seeds = []
+    for _ in range(args.rand):
+        seeds.append(random.randint(1, 1000))
+
+simulationContainer = NS3SimulationContainer(args.highestBin, args.dry)
+#Instantiate the simulation
+for i in range(start, end + 1, pace):
+    if iterate: setattr(args, it, i)
+
+    if rand:
+        simSeedsContainer = NS3SimulationContainer(args.highestBin, args.dry)
+        for s in seeds:
+            args.seed = s
+            simSeedsContainer.add(instantiateSimulation(args))
+
+        if not args.dry:
+            simSeedsContainer.run(args.gdb, args.threads)
+        
+        if args.plot:
+            plot = Plot(simSeedsContainer)
+            plot.everyGraph()
+        
+        simulationContainer.add(simSeedsContainer.getAverageSim())
+
+    else:
+        simulationContainer.add(instantiateSimulation(args))
+
+# Run the simulation with optional gdb debugger
+if not rand:
+    simulationContainer.run(args.gdb, args.threads)
+
+plot = Plot(simulationContainer)
+
+# Parse the output of the simulation and plot the graphs
+if args.plot and not rand:
+    plot.everyGraph()
+
+if args.plot_summary:
+    plot.nUEsSummaryGraph(start, end)
+    plot.packetStatistics(start, end)
+
+print("All simulations ended")

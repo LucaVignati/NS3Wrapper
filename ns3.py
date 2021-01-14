@@ -18,7 +18,7 @@ parser = argparse.ArgumentParser(description='NS-3 Python wrapper')
 
 parser.add_argument("--gen", choices=["4G", "5G"], required=True, help="5G or 4G")
 parser.add_argument("--nUEs", type=int, dest='numberOfueNodes', default=1, help="The number of deployed User Equipments")
-parser.add_argument("--time", type=int, dest='simTime', default=22, help="Total simulation time (including start and end times)")
+parser.add_argument("--time", type=int, dest='simTime', default=6, help="Total simulation time (including start and end times)")
 parser.add_argument("--radius", type=int, dest='radius', default=2, help="Radius of the circle where the UEs are randomly placed")
 parser.add_argument("--height", type=int, dest='height', default=1, help="Height of the UEs")
 parser.add_argument("--num", type=int, dest='numerology', default=3, help="Value defining the subcarrier spaceing and symbol lenght")
@@ -55,32 +55,37 @@ if rand:
     for _ in range(args.rand):
         seeds.append(random.randint(1, 1000))
 
+runningSims = []
+simContainers = []
 simulationContainer = NS3SimulationContainer(args.highestBin, args.dry)
 #Instantiate the simulation
 for i in range(start, end + 1, pace):
     if iterate: setattr(args, it, i)
 
     if rand:
-        simSeedsContainer = NS3SimulationContainer(args.highestBin, args.dry)
+        simSeedsContainer = NS3SimulationContainer(args.highestBin, args.dry, runningSims)
         for s in seeds:
             args.seed = s
             simSeedsContainer.add(instantiateSimulation(args))
 
         if not args.dry:
-            simSeedsContainer.run(args.gdb, args.threads)
+            simSeedsContainer.run(args.gdb, args.threads, i == end)
         
-        if args.plot:
-            plot = Plot(simSeedsContainer)
-            plot.everyGraph()
-        
-        simulationContainer.add(simSeedsContainer.getAverageSim())
+        simContainers.append(simSeedsContainer)
 
     else:
         simulationContainer.add(instantiateSimulation(args))
 
+for simContainer in simContainers:
+    simulationContainer.add(simContainer.getAverageSim())
+
+    if args.plot:
+        plot = Plot(simContainer)
+        plot.everyGraph()
+
 # Run the simulation with optional gdb debugger
 if not rand:
-    simulationContainer.run(args.gdb, args.threads)
+    simulationContainer.run(args.gdb, args.threads, True)
 
 plot = Plot(simulationContainer)
 

@@ -6,9 +6,9 @@ import copy
 
 class NS3SimulationContainer():
 
-    def __init__(self, highestBin, dry, binWidth=0.1, windowSize=50, overlap=0.5, lateThreshold=20):
+    def __init__(self, highestBin, dry, runningSims=[], binWidth=0.1, windowSize=50, overlap=0.5, lateThreshold=20):
         self.simList = []
-        self.runningSims = []
+        self.runningSims = runningSims
         self.binWidth = binWidth
         self.highestBin = highestBin
         self.nBins = int(self.highestBin/self.binWidth)        
@@ -20,14 +20,15 @@ class NS3SimulationContainer():
     def add(self, simulation):
         self.simList.append(simulation)
 
-    def run(self, gdb, nThreads):
+    def run(self, gdb, nThreads, last):
         for simulation in self.simList:
             self.busyWait(nThreads)
             self.runningSims.append(simulation)
             if not self.dry:
                 simulation.run(gdb)
             time.sleep(0.2)
-        self.busyWait(1)
+        if last:
+            self.busyWait(1)
         sim = self.simList[0]
         self.nWindows = int(sim.simTime/(self.windowSize/1000*self.overlap))
 

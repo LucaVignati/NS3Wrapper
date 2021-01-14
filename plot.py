@@ -52,10 +52,11 @@ class Plot():
         Plots the jitter function of time
         """
         e2eJitPlotFile = simulation.simFolderPath + self.imagesFolder + '/' + simulation.filePrefix + self.jitterFileName
-        plt.plot(np.linspace(0, simulation.simTime, self.container.nWindows), np.array(simulation.jitter))
+        plt.plot(np.linspace(0, simulation.simTime, len(simulation.jitter)), np.array(simulation.jitter))
         plt.xlabel('Time [s]')
         plt.ylabel('Jitter [ms]')
         plt.grid(True, alpha=0.75)
+        plt.axis([0, simulation.simTime, 0, 10])
         plt.legend([str(simulation.nUEs) + ' UEs - Rx Packets: ' + str(simulation.rxPercentage * 100) + '%'])
         if save:
             plt.savefig(e2eJitPlotFile)

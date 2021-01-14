@@ -17,11 +17,12 @@ class NS3Simulation():
     e2eLatHist = None
     process = None
     data = []
+    discardedTime = 1.1
     
     def __init__(self,gen,nUEs,simTime,radius,height,seed,comment):
         self.gen = gen
         self.nUEs = nUEs
-        self.simTime = simTime
+        self.simTime = simTime + self.discardedTime
         self.radius = radius
         self.height = height
         self.seed = seed
@@ -42,6 +43,7 @@ class NS3Simulation():
         else:
             self.wafArgs = [self.programName, '--run', self.simName + " " + self.ns3Args]
 
+        self.checkFolderStructure()
         self.process = subprocess.Popen(self.wafArgs)
         return self.process
 
@@ -75,7 +77,9 @@ class NS3Simulation():
                     dataLine = []
                     for n in line.split():
                         dataLine.append(float(n))
-                    self.data.append(dataLine)
+                    time = dataLine[1]/1e6
+                    if time > self.discardedTime and time < self.simTime - 1:
+                        self.data.append(dataLine)
                     line = fp.readline()
                 
                 # Sort the data in chronological order
@@ -124,10 +128,9 @@ class NS3Simulation():
     def calculateJitterFunction(self, windowSize, overlap):
         # Calculate the total number of overlapping windows
         nWindows = int(self.simTime/(windowSize/1000*overlap))
-        
         # Initialize the windows nested lists
         windows = []
-        for i in range(nWindows):
+        for _ in range(nWindows):
             windows.append([])
 
         # Populate each window with the latency of the packets received in that window

@@ -17,7 +17,7 @@ class NS3Simulation():
     e2eLatHist = None
     process = None
     data = []
-    discardedTime = 1.1
+    discardedTime = 1.5
     
     def __init__(self,gen,nUEs,simTime,radius,height,seed,comment):
         self.gen = gen
@@ -64,7 +64,7 @@ class NS3Simulation():
             if not os.path.isdir(path + self.imagesFolder):
                 os.mkdir(path + self.imagesFolder)
     
-    def parseOutput(self):
+    def parseOutput(self, truncate):
         self.data = []
         self.checkFolderStructure()
         filepath = self.simFolderPath + self.dataFolder + '/' + self.filePrefix + '_transferFile.txt'
@@ -72,14 +72,21 @@ class NS3Simulation():
         try:
             with open(filepath, 'r') as fp:
                 # Parse the rest of the file
+                packetNumber = 0
+                ueId = 0
                 line = fp.readline()
                 while line:
                     dataLine = []
                     for n in line.split():
                         dataLine.append(float(n))
                     time = dataLine[1]/1e6
-                    if time > self.discardedTime and time < self.simTime - 1:
+                    if (packetNumber > 1500 and packetNumber < (self.simTime-1)*1500 and time < self.simTime) or not truncate:
                         self.data.append(dataLine)
+                    if ueId == dataLine[0]:
+                        packetNumber += 1
+                    else:
+                        packetNumber = 0
+                        ueId = dataLine[0]
                     line = fp.readline()
                 
                 # Sort the data in chronological order
@@ -128,6 +135,7 @@ class NS3Simulation():
     def calculateJitterFunction(self, windowSize, overlap):
         # Calculate the total number of overlapping windows
         nWindows = int(self.simTime/(windowSize/1000*overlap))
+        print(nWindows)
         # Initialize the windows nested lists
         windows = []
         for _ in range(nWindows):
@@ -136,9 +144,10 @@ class NS3Simulation():
         # Populate each window with the latency of the packets received in that window
         for p in self.data:
             v = p[1]/(1000*windowSize)
-            if v < len(windows):
+            if v < nWindows:
                 windows[int(math.floor(v)*2)].append(p[2])
                 v = (p[1] - windowSize*overlap)/(1000*windowSize)
+                print(int(math.floor(v)*2+1))
                 windows[int(math.floor(v)*2+1)].append(p[2])
 
         # Calculate the jitter as the standard deviation of the latencies in each window

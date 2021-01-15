@@ -42,7 +42,7 @@ class NS3SimulationContainer():
 
     def postProcess(self, simulation):
         for _ in range(10):
-            if simulation.parseOutput():
+            if simulation.parseOutput(truncate=True):
                 break
             else:
                 time.sleep(0.5)
@@ -69,7 +69,7 @@ class NS3SimulationContainer():
 
     def getAverageSim(self):
         self.writeAverageSimFile()
-        self.avgSim.parseOutput()
+        self.avgSim.parseOutput(truncate=False)
         self.avgSim.calculateE2eLatHist(self.binWidth, self.highestBin)
         self.avgSim.calculateCumulativeLat(self.binWidth, self.highestBin)
         self.avgSim.calculatePacketStatistics(self.lateThreshold)

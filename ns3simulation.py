@@ -135,7 +135,6 @@ class NS3Simulation():
     def calculateJitterFunction(self, windowSize, overlap):
         # Calculate the total number of overlapping windows
         nWindows = int(self.simTime/(windowSize/1000*overlap))
-        print(nWindows)
         # Initialize the windows nested lists
         windows = []
         for _ in range(nWindows):
@@ -147,7 +146,6 @@ class NS3Simulation():
             if v < nWindows:
                 windows[int(math.floor(v)*2)].append(p[2])
                 v = (p[1] - windowSize*overlap)/(1000*windowSize)
-                print(int(math.floor(v)*2+1))
                 windows[int(math.floor(v)*2+1)].append(p[2])
 
         # Calculate the jitter as the standard deviation of the latencies in each window

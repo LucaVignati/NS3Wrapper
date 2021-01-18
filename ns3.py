@@ -78,6 +78,8 @@ for i in range(start, end + 1, pace):
 
 for simContainer in simContainers:
     simulationContainer.add(simContainer.getAverageSim())
+    simulationContainer.simCount += simContainer.simCount
+    simulationContainer.simFailed += simContainer.simFailed
 
     if args.plot:
         plot = Plot(simContainer)
@@ -98,3 +100,6 @@ if args.plot_summary:
     plot.packetStatistics(start, end)
 
 print("All simulations ended")
+print('Total simulations: ', simulationContainer.simCount + simulationContainer.simFailed)
+print('Successful simulations: ', simulationContainer.simCount)
+print('Failed simulations: ', simulationContainer.simFailed)

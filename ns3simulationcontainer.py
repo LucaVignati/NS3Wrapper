@@ -6,6 +6,9 @@ import copy
 
 class NS3SimulationContainer():
 
+    simCount = 0
+    simFailed = 0
+
     def __init__(self, highestBin, dry, runningSims=[], binWidth=0.1, windowSize=50, overlap=0.5, lateThreshold=20):
         self.simList = []
         self.runningSims = runningSims
@@ -42,15 +45,20 @@ class NS3SimulationContainer():
 
     def postProcess(self, simulation):
         for _ in range(10):
-            if simulation.parseOutput(truncate=True):
+            simSuccessful = simulation.parseOutput(truncate=True)
+            if simSuccessful:
                 break
             else:
                 time.sleep(0.5)
-        simulation.calculateE2eLatHist(self.binWidth, self.highestBin)
-        simulation.calculateCumulativeLat(self.binWidth, self.highestBin)
-        simulation.calculateJitterFunction(self.windowSize, self.overlap)
-        simulation.calculateXCorrJitter(self.windowSize, self.overlap)
-        simulation.calculatePacketStatistics(self.lateThreshold)
+        if simSuccessful:
+            simulation.calculateE2eLatHist(self.binWidth, self.highestBin)
+            simulation.calculateCumulativeLat(self.binWidth, self.highestBin)
+            simulation.calculateJitterFunction(self.windowSize, self.overlap)
+            simulation.calculateXCorrJitter(self.windowSize, self.overlap)
+            simulation.calculatePacketStatistics(self.lateThreshold)
+            self.simCount += 1
+        else:
+            self.simFailed += 1
 
     def writeAverageSimFile(self):
         self.data = []

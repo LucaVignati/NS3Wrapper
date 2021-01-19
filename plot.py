@@ -80,7 +80,7 @@ class Plot():
         if not holdOn:    
             plt.close()
 
-    def nUEsSummaryGraph(self, start, end):
+    def nUEsSummaryGraph(self, start, end, seeds):
         legend = []
         c = self.container
         simList = c.simList
@@ -90,11 +90,15 @@ class Plot():
             self.cumulativeLat(s, save=False, holdOn=True)
             legend.append(str(s.nUEs) + ' UEs')
 
+        title = sim.gen
+        if sim.gen == '5G': title += ' numerology ' + str(sim.numerology)
+        title += ' - ' + str(seeds) + ' simulations per plot'
         plt.legend(legend)
+        plt.title(title)
         plt.savefig(destFile)
         plt.close()
 
-    def packetStatistics(self, start, end):
+    def packetStatistics(self, start, end, seeds):
         statistics = []
         c = self.container
         ticks = range(2, 2*len(c.simList) + 1, 2)
@@ -104,11 +108,18 @@ class Plot():
         for s in simList:
             statistics.append(s.rxPercentage * 100)
 
-        plt.bar(range(start, end + 2, 2), statistics)
-
-        plt.xlabel('Number of UEs')
-        plt.ylabel('Delivered packets [%]')
-        plt.xticks(ticks)
+        fig, ax = plt.subplots()
+        ax.bar(range(start, end + 2, 2), statistics)
+        ax.set_xticks(ticks)
+        ax.set_xlabel('Number of UEs')
+        ax.set_ylabel('Delivered packets [%]')
+        ax.set_yscale('log')
+        ax.set_ylim([0.1, 100])
+        
+        title = sim.gen
+        if sim.gen == '5G': title += ' numerology ' + str(sim.numerology)
+        title += ' - ' + str(seeds) + ' simulations per plot'
+        plt.title(title)
         plt.savefig(destFile)
         plt.close()
 

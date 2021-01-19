@@ -194,3 +194,4 @@ class NS3NRSimulation(NS3Simulation):
         NS3Simulation.__init__(self,gen,nUEs,simTime,radius,height,seed,comment)
         self.filePrefix = 'r' + str(radius) + '-h' + str(height) + '-num' + str(numerology) + '-s' + str(seed) + '-t' + str(simTime) + '-' + comment
         self.ns3Args += ' --numerology=' + str(numerology)
+        self.numerology = numerology

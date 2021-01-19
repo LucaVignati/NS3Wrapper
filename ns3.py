@@ -96,8 +96,8 @@ if args.plot and not rand:
     plot.everyGraph()
 
 if args.plot_summary:
-    plot.nUEsSummaryGraph(start, end)
-    plot.packetStatistics(start, end)
+    plot.nUEsSummaryGraph(start, end, args.rand)
+    plot.packetStatistics(start, end, args.rand)
 
 print("All simulations ended")
 print('Total simulations: ', simulationContainer.simCount + simulationContainer.simFailed)

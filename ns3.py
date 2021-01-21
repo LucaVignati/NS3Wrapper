@@ -69,7 +69,7 @@ for i in range(end, start - 1, -pace):
             simSeedsContainer.add(instantiateSimulation(args))
 
         if not args.dry:
-            simSeedsContainer.run(args.gdb, args.threads, i == end)
+            simSeedsContainer.run(args.gdb, args.threads, i == start)
         
         simContainers.append(simSeedsContainer)
 

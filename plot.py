@@ -106,15 +106,15 @@ class Plot():
         sim = simList[0]
         destFile = sim.rootFolderPath + 'statistics/' + sim.gen + '-' + sim.filePrefix + '_nUEs(' + str(start) + ':' + str(end) + ')StatisticsPlot' + '.png'
         for s in simList:
-            statistics.append(s.rxPercentage * 100)
+            statistics.append(1 - s.rxPercentage)
 
         fig, ax = plt.subplots()
         ax.bar(range(start, end + 2, 2), statistics)
         ax.set_xticks(ticks)
         ax.set_xlabel('Number of UEs')
-        ax.set_ylabel('Delivered packets [%]')
+        ax.set_ylabel('Lost packets [%]')
         ax.set_yscale('log')
-        ax.set_ylim([0.1, 100])
+        ax.set_ylim([0.01, 1])
         
         title = sim.gen
         if sim.gen == '5G': title += ' numerology ' + str(sim.numerology)

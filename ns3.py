@@ -59,7 +59,7 @@ runningSims = []
 simContainers = []
 simulationContainer = NS3SimulationContainer(args.highestBin, args.dry)
 #Instantiate the simulation
-for i in range(start, end + 1, pace):
+for i in range(end, start - 1, -pace):
     if iterate: setattr(args, it, i)
 
     if rand:

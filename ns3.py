@@ -76,7 +76,8 @@ for i in range(end, start - 1, -pace):
     else:
         simulationContainer.add(instantiateSimulation(args))
 
-for simContainer in simContainers:
+for i in range(len(simContainers), 0, -1):
+    simContainer = simContainers[i-1]
     simulationContainer.add(simContainer.getAverageSim())
     simulationContainer.simCount += simContainer.simCount
     simulationContainer.simFailed += simContainer.simFailed

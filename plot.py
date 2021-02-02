@@ -114,7 +114,7 @@ class Plot():
         ax.set_xlabel('Number of UEs')
         ax.set_ylabel('Lost packets [%]')
         ax.set_yscale('log')
-        ax.set_ylim([0.01, 1])
+        ax.set_ylim([0.00001, 1])
         
         title = sim.gen
         if sim.gen == '5G': title += ' numerology ' + str(sim.numerology)

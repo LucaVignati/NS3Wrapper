@@ -90,9 +90,9 @@ class Plot():
             self.cumulativeLat(s, save=False, holdOn=True)
             legend.append(str(s.nUEs) + ' UEs')
 
-        title = sim.gen
+        title = sim.gen + ' scenario ' + sim.scenario
         if sim.gen == '5G': title += ' numerology ' + str(sim.numerology)
-        title += ' - ' + str(seeds) + ' simulations per plot'
+        title += ' - ' + str(seeds) + ' sims per plot'
         plt.legend(legend)
         plt.title(title)
         plt.savefig(destFile)

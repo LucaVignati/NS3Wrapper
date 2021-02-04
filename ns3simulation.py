@@ -19,21 +19,24 @@ class NS3Simulation():
     data = []
     discardedTime = 1.5
     
-    def __init__(self,gen,nUEs,simTime,radius,height,seed,comment):
+    def __init__(self,gen,scenario,nUEs,neNBs,simTime,radius,height,seed,comment):
         self.gen = gen
+        self.scenario = scenario
         self.nUEs = nUEs
+        self.neNBs = neNBs
         self.simTime = simTime + self.discardedTime
         self.radius = radius
         self.height = height
         self.seed = seed
         self.comment = comment
-        self.simName = gen + '-Scenario1'
+        self.simName = gen + '-Scenario' + scenario
         self.ns3Args =  ' --numberOfueNodes='   + str(nUEs) +   \
                         ' --radius='            + str(radius) + \
                         ' --height='            + str(height) + \
                         ' --seed='              + str(seed) +   \
                         ' --simTime='           + str(simTime)
 
+        if int(scenario) > 1: self.ns3Args += ' --numberOfenbNodes=' + str(neNBs)
         if comment != '': self.ns3Args += ' --comment=' + comment
         self.simFolderPath = self.rootFolderPath + self.gen + '/' + str(self.nUEs) + ' UEs'
         
@@ -184,14 +187,18 @@ class NS3Simulation():
 
 class NS3LTESimulation(NS3Simulation):
 
-    def __init__(self,gen,nUEs,simTime,radius,height,seed,comment):
-        NS3Simulation.__init__(self,gen,nUEs,simTime,radius,height,seed,comment)
-        self.filePrefix = 'r' + str(radius) + '-h' + str(height) + '-s' + str(seed) + '-t' + str(simTime) + '-' + comment
+    def __init__(self,gen,scenario,nUEs,neNBs,simTime,radius,height,seed,comment):
+        NS3Simulation.__init__(self,gen,scenario,nUEs,neNBs,simTime,radius,height,seed,comment)
+        self.filePrefix = ''
+        if int(scenario) > 1: self.filePrefix = 'eNB' + str(neNBs) + '-'
+        self.filePrefix += 'r' + str(radius) + '-h' + str(height) + '-s' + str(seed) + '-t' + str(simTime) + '-' + comment
 
 class NS3NRSimulation(NS3Simulation):
 
-    def __init__(self,gen,nUEs,simTime,radius,height,numerology,seed,comment):
-        NS3Simulation.__init__(self,gen,nUEs,simTime,radius,height,seed,comment)
+    def __init__(self,gen,scenario,nUEs,neNBs,simTime,radius,height,numerology,seed,comment):
+        NS3Simulation.__init__(self,gen,scenario,nUEs,neNBs,simTime,radius,height,seed,comment)
+        self.filePrefix = ''
+        if int(scenario) > 1: self.filePrefix = 'gNB' + str(neNBs) + '-'
         self.filePrefix = 'r' + str(radius) + '-h' + str(height) + '-num' + str(numerology) + '-s' + str(seed) + '-t' + str(simTime) + '-' + comment
         self.ns3Args += ' --numerology=' + str(numerology)
         self.numerology = numerology

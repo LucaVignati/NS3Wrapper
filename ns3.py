@@ -9,15 +9,18 @@ from plot import Plot
 
 def instantiateSimulation(args):
     if   args.gen == '4G':
-        simulation = NS3LTESimulation(args.gen, args.numberOfueNodes, args.simTime, args.radius, args.height, args.seed, args.comment)
+        simulation = NS3LTESimulation(args.gen, args.scenario, args.numberOfueNodes, args.numberOfenbNodes, args.simTime, args.radius, args.height, args.seed, args.comment)
     elif args.gen == '5G':
-        simulation = NS3NRSimulation(args.gen, args.numberOfueNodes, args.simTime, args.radius, args.height, args.numerology, args.seed, args.comment)
+        simulation = NS3NRSimulation(args.gen, args.scenario, args.numberOfueNodes, args.numberOfenbNodes, args.simTime, args.radius, args.height, args.numerology, args.seed, args.comment)
     return simulation
 
 parser = argparse.ArgumentParser(description='NS-3 Python wrapper')
 
 parser.add_argument("--gen", choices=["4G", "5G"], required=True, help="5G or 4G")
+parser.add_argument("--scenario", choices=["1", "2"], required=True, help="1 or 2")
 parser.add_argument("--nUEs", type=int, dest='numberOfueNodes', default=1, help="The number of deployed User Equipments")
+parser.add_argument("--neNBs", type=int, dest='numberOfenbNodes', default=2, help="The number of deployed eNBs/gNBs")
+parser.add_argument("--nUExCell", type=int, default=1, help="The number of deployed UE in each eNBs/gNBs")
 parser.add_argument("--time", type=int, dest='simTime', default=6, help="Total simulation time (including start and end times)")
 parser.add_argument("--radius", type=int, dest='radius', default=2, help="Radius of the circle where the UEs are randomly placed")
 parser.add_argument("--height", type=int, dest='height', default=1, help="Height of the UEs")
@@ -61,6 +64,7 @@ simulationContainer = NS3SimulationContainer(args.highestBin, args.dry)
 #Instantiate the simulation
 for i in range(end, start - 1, -pace):
     if iterate: setattr(args, it, i)
+    if args.nUExCell != None: args.numberOfueNodes = args.numberOfenbNodes*args.nUExCell
 
     if rand:
         simSeedsContainer = NS3SimulationContainer(args.highestBin, args.dry, runningSims)

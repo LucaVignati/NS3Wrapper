@@ -19,22 +19,30 @@ class NS3Simulation():
     data = []
     discardedTime = 1.5
     
-    def __init__(self,gen,scenario,nUEs,neNBs,simTime,radius,height,seed,comment):
+    def __init__(self,gen,scenario,nUEs,neNBs,nPackets,interPacketInterval,simTime,radius,height,seed,comment):
         self.gen = gen
         self.scenario = scenario
         self.nUEs = nUEs
         self.neNBs = neNBs
-        self.simTime = simTime + self.discardedTime
+        self.interPacketInterval = interPacketInterval
+        if nPackets is not None:
+            self.nPackets = nPackets
+            self.simTime = int(self.nPackets*self.interPacketInterval + self.discardedTime)
+        elif simTime > 0:
+            self.nPackets = int(simTime/interPacketInterval)
+            self.simTime = simTime + self.discardedTime
         self.radius = radius
         self.height = height
         self.seed = seed
         self.comment = comment
         self.simName = gen + '-Scenario' + scenario
-        self.ns3Args =  ' --numberOfueNodes='   + str(nUEs) +   \
-                        ' --radius='            + str(radius) + \
-                        ' --height='            + str(height) + \
-                        ' --seed='              + str(seed) +   \
-                        ' --simTime='           + str(simTime)
+        self.ns3Args =  ' --numberOfueNodes='       + str(nUEs)                 + \
+                        ' --radius='                + str(radius)               + \
+                        ' --height='                + str(height)               + \
+                        ' --seed='                  + str(seed)                 + \
+                        ' --simTime='               + str(self.simTime)         + \
+                        ' --nPackets='              + str(self.nPackets)        + \
+                        ' --interPacketInterval='   + str(interPacketInterval)
 
         if int(scenario) > 1: self.ns3Args += ' --numberOfenbNodes=' + str(neNBs)
         if comment != '': self.ns3Args += ' --comment=' + comment
@@ -83,7 +91,7 @@ class NS3Simulation():
                     for n in line.split():
                         dataLine.append(float(n))
                     time = dataLine[1]/1e6
-                    if (packetNumber > 1500 and packetNumber < (self.simTime-1)*1500 and time < self.simTime) or not truncate:
+                    if (packetNumber > 1000 and packetNumber < (self.simTime-1)*1000 and time < self.simTime) or not truncate:
                         self.data.append(dataLine)
                     if ueId == dataLine[0]:
                         packetNumber += 1
@@ -115,7 +123,7 @@ class NS3Simulation():
         e2eLatHist, _ = np.histogram(e2eLatency, range=(0, highestBin), bins=nBins)
 
         # Store the information in the class instance
-        self.e2eLatHist = e2eLatHist/len(e2eLatency)*100
+        self.e2eLatHist = e2eLatHist/len(e2eLatency)
 
         # Store the number of received packets
         self.receivedPackets = len(e2eLatency)
@@ -187,18 +195,18 @@ class NS3Simulation():
 
 class NS3LTESimulation(NS3Simulation):
 
-    def __init__(self,gen,scenario,nUEs,neNBs,simTime,radius,height,seed,comment):
-        NS3Simulation.__init__(self,gen,scenario,nUEs,neNBs,simTime,radius,height,seed,comment)
+    def __init__(self,gen,scenario,nUEs,neNBs,nPackets,interPacketInterval,simTime,radius,height,seed,comment):
+        NS3Simulation.__init__(self,gen,scenario,nUEs,neNBs,nPackets,interPacketInterval,simTime,radius,height,seed,comment)
         self.filePrefix = ''
         if int(scenario) > 1: self.filePrefix = 'eNB' + str(neNBs) + '-'
-        self.filePrefix += 'r' + str(radius) + '-h' + str(height) + '-s' + str(seed) + '-t' + str(simTime) + '-' + comment
+        self.filePrefix += 'r' + str(radius) + '-s' + str(seed) + '-t' + str(self.simTime) + '-' + comment
 
 class NS3NRSimulation(NS3Simulation):
 
-    def __init__(self,gen,scenario,nUEs,neNBs,simTime,radius,height,numerology,seed,comment):
-        NS3Simulation.__init__(self,gen,scenario,nUEs,neNBs,simTime,radius,height,seed,comment)
+    def __init__(self,gen,scenario,nUEs,neNBs,nPackets,interPacketInterval,simTime,radius,height,numerology,seed,comment):
+        NS3Simulation.__init__(self,gen,scenario,nUEs,neNBs,nPackets,interPacketInterval,simTime,radius,height,seed,comment)
         self.filePrefix = ''
         if int(scenario) > 1: self.filePrefix = 'gNB' + str(neNBs) + '-'
-        self.filePrefix = 'r' + str(radius) + '-h' + str(height) + '-num' + str(numerology) + '-s' + str(seed) + '-t' + str(simTime) + '-' + comment
+        self.filePrefix += 'r' + str(radius) + '-num' + str(numerology) + '-s' + str(seed) + '-t' + str(self.simTime) + '-' + comment
         self.ns3Args += ' --numerology=' + str(numerology)
         self.numerology = numerology

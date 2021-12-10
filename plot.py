@@ -38,9 +38,9 @@ class Plot():
         e2eCumLatPlotFile = simulation.simFolderPath + self.imagesFolder + '/' + simulation.filePrefix + self.cumulativeLatFileName
         plt.plot(np.linspace(0, self.container.highestBin, self.container.nBins), cumulativeLat)
         plt.xlabel('Latency [ms]')
-        plt.ylabel('ecdf [%]')
+        plt.ylabel('Cumulative distribution function')
         plt.grid(True, alpha=0.75)
-        plt.axis([0, self.container.highestBin, 0, 100])
+        plt.axis([0, self.container.highestBin, 0, 1])
         plt.legend([str(simulation.nUEs) + ' UEs - Rx Packets: ' + str(simulation.rxPercentage * 100) + '%'])
         if save:
             plt.savefig(e2eCumLatPlotFile)
@@ -93,15 +93,21 @@ class Plot():
         title = sim.gen + ' scenario ' + sim.scenario
         if sim.gen == '5G': title += ' numerology ' + str(sim.numerology)
         title += ' - ' + str(seeds) + ' sims per plot'
+        if int(sim.scenario) > 1:
+            title += ' - ' + str(sim.neNBs)
+            if sim.gen == '4G':
+                title += ' eNBs'
+            else:
+                title += ' gNBs'
         plt.legend(legend)
         plt.title(title)
         plt.savefig(destFile)
         plt.close()
 
-    def packetStatistics(self, start, end, seeds):
+    def packetStatistics(self, start, end, pace, seeds):
         statistics = []
         c = self.container
-        ticks = range(2, 2*len(c.simList) + 1, 2)
+        ticks = range(start, end + 1, pace)
         simList = c.simList
         sim = simList[0]
         destFile = sim.rootFolderPath + 'statistics/' + sim.gen + '-' + sim.filePrefix + '_nUEs(' + str(start) + ':' + str(end) + ')StatisticsPlot' + '.png'
@@ -109,16 +115,22 @@ class Plot():
             statistics.append(1 - s.rxPercentage)
 
         fig, ax = plt.subplots()
-        ax.bar(range(start, end + 2, 2), statistics)
+        ax.bar(range(start, end + 2, pace), statistics)
         ax.set_xticks(ticks)
         ax.set_xlabel('Number of UEs')
-        ax.set_ylabel('Lost packets [%]')
+        ax.set_ylabel('Fraction of lost packets')
         ax.set_yscale('log')
         ax.set_ylim([0.00001, 1])
         
-        title = sim.gen
+        title = sim.gen + ' scenario ' + sim.scenario
         if sim.gen == '5G': title += ' numerology ' + str(sim.numerology)
-        title += ' - ' + str(seeds) + ' simulations per plot'
+        title += ' - ' + str(seeds) + ' simulations per bar'
+        if int(sim.scenario) > 1:
+            title += ' - ' + str(sim.neNBs)
+            if sim.gen == '4G':
+                title += ' eNBs'
+            else:
+                title += ' gNBs'
         plt.title(title)
         plt.savefig(destFile)
         plt.close()

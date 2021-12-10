@@ -9,9 +9,9 @@ from plot import Plot
 
 def instantiateSimulation(args):
     if   args.gen == '4G':
-        simulation = NS3LTESimulation(args.gen, args.scenario, args.numberOfueNodes, args.numberOfenbNodes, args.simTime, args.radius, args.height, args.seed, args.comment)
+        simulation = NS3LTESimulation(args.gen, args.scenario, args.numberOfueNodes, args.numberOfenbNodes, args.nPackets, 1/args.packetRate, args.simTime, args.radius, args.height, args.seed, args.comment)
     elif args.gen == '5G':
-        simulation = NS3NRSimulation(args.gen, args.scenario, args.numberOfueNodes, args.numberOfenbNodes, args.simTime, args.radius, args.height, args.numerology, args.seed, args.comment)
+        simulation = NS3NRSimulation(args.gen, args.scenario, args.numberOfueNodes, args.numberOfenbNodes, args.nPackets, 1/args.packetRate, args.simTime, args.radius, args.height, args.numerology, args.seed, args.comment)
     return simulation
 
 parser = argparse.ArgumentParser(description='NS-3 Python wrapper')
@@ -20,11 +20,14 @@ parser.add_argument("--gen", choices=["4G", "5G"], required=True, help="5G or 4G
 parser.add_argument("--scenario", choices=["1", "2"], required=True, help="1 or 2")
 parser.add_argument("--nUEs", type=int, dest='numberOfueNodes', default=1, help="The number of deployed User Equipments")
 parser.add_argument("--neNBs", type=int, dest='numberOfenbNodes', default=2, help="The number of deployed eNBs/gNBs")
-parser.add_argument("--nUExCell", type=int, default=1, help="The number of deployed UE in each eNBs/gNBs")
+parser.add_argument("--nUExCell", type=int, help="The number of deployed UE in each eNBs/gNBs")
 parser.add_argument("--time", type=int, dest='simTime', default=6, help="Total simulation time (including start and end times)")
+parser.add_argument("--limitPackets", action='store_true', help="Limit the total number of packets for each simulation to that of the shortest simulation")
+parser.add_argument("--packets", type=int, dest='nPackets', help="Number of packets transmitted by each UE in each simulation")
+parser.add_argument("--packetRate", type=int, default=1500, help="Frequency of packet transmission in Hz")
 parser.add_argument("--radius", type=int, dest='radius', default=2, help="Radius of the circle where the UEs are randomly placed")
-parser.add_argument("--height", type=int, dest='height', default=1, help="Height of the UEs")
-parser.add_argument("--num", type=int, dest='numerology', default=3, help="Value defining the subcarrier spaceing and symbol lenght")
+parser.add_argument("--height", type=float, dest='height', default=1.5, help="Height of the UEs")
+parser.add_argument("--num", type=int, dest='numerology', default=2, help="Value defining the subcarrier spaceing and symbol lenght")
 parser.add_argument("--seed", type=int, dest='seed', default=0, help="Seed of rand function to use in the simulation")
 parser.add_argument("--comment", dest='comment', default='', help="Height of the UEs")
 parser.add_argument("--gdb", action='store_true', help="Run the program under gdb")
@@ -65,6 +68,10 @@ simulationContainer = NS3SimulationContainer(args.highestBin, args.dry)
 for i in range(end, start - 1, -pace):
     if iterate: setattr(args, it, i)
     if args.nUExCell != None: args.numberOfueNodes = args.numberOfenbNodes*args.nUExCell
+    if args.limitPackets:
+        args.nPackets = int(((4500000+2000*args.numberOfueNodes)/60)/args.numberOfueNodes)
+        if args.nPackets < 3000: args.nPackets = 3000
+    print(args.numberOfueNodes, args.nPackets)
 
     if rand:
         simSeedsContainer = NS3SimulationContainer(args.highestBin, args.dry, runningSims)
@@ -102,7 +109,7 @@ if args.plot and not rand:
 
 if args.plot_summary:
     plot.nUEsSummaryGraph(start, end, args.rand)
-    plot.packetStatistics(start, end, args.rand)
+    plot.packetStatistics(start, end, pace, args.rand)
 
 print("All simulations ended")
 print('Total simulations: ', simulationContainer.simCount + simulationContainer.simFailed)

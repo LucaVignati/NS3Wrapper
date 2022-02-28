@@ -38,7 +38,7 @@ class Plot():
         e2eCumLatPlotFile = simulation.simFolderPath + self.imagesFolder + '/' + simulation.filePrefix + self.cumulativeLatFileName
         plt.plot(np.linspace(0, self.container.highestBin, self.container.nBins), cumulativeLat)
         plt.xlabel('Latency [ms]')
-        plt.ylabel('Cumulative distribution function')
+        plt.ylabel('CDF [Latency]')
         plt.grid(True, alpha=0.75)
         plt.axis([0, self.container.highestBin, 0, 1])
         plt.legend([str(simulation.nUEs) + ' UEs - Rx Packets: ' + str(simulation.rxPercentage * 100) + '%'])

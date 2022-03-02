@@ -38,6 +38,7 @@ parser.add_argument("--threads", type=int, default=1, help="Specifies the maximu
 parser.add_argument("--maxLat", type=int, dest='highestBin', default=20, help="Specifies the maximum latency displayed in plots")
 parser.add_argument("-p", "--plot", action='store_true', dest='plot', help="Enables plot creation for each simulation output")
 parser.add_argument("-P", "--plot-summary", action='store_true', dest='plot_summary', help="Enables summary plot creation")
+parser.add_argument("--plot-positions", action='store_true', dest='plot_positions', help="Enables the plot of UE and gNB/eNB positions")
 
 
 args = parser.parse_args()
@@ -110,6 +111,9 @@ if args.plot and not rand:
 if args.plot_summary:
     plot.nUEsSummaryGraph(start, end, args.rand)
     plot.packetStatistics(start, end, pace, args.rand)
+
+if args.plot_positions:
+    plot.positions()
 
 print("All simulations ended")
 print('Total simulations: ', simulationContainer.simCount + simulationContainer.simFailed)

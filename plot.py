@@ -135,6 +135,29 @@ class Plot():
         plt.savefig(destFile)
         plt.close()
 
+    def positions(self):
+        c = self.container
+        simList = c.simList
+        sim = simList[0]
+        positions = sim.positions
+        marker = ''
+        title = 'Positions'
+        destFile = sim.simFolderPath + self.imagesFolder + '/' + sim.filePrefix + '_positions' + '.png'
+        fig, ax = plt.subplots()
+        for position in positions:
+            x = int(position[1])
+            y = int(position[2])
+            if position[0] == "eNB":
+                marker = 'ro'
+                circle = plt.Circle((x, y), sim.radius, color='black', fill=False)
+                ax.add_patch(circle)
+            if position[0] == "UE":
+                marker = 'bo'
+            ax.plot(x, y, marker)
+        plt.title(title)
+        plt.savefig(destFile)
+        plt.close()
+
     def everyGraph(self, e2e=True, cumulative=True, jitter=True, xcorr=True):
         for simulation in self.container.simList:
             self.e2eLatency(simulation)

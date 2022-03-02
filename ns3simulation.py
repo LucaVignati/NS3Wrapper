@@ -78,6 +78,8 @@ class NS3Simulation():
         self.data = []
         self.checkFolderStructure()
         filepath = self.simFolderPath + self.dataFolder + '/' + self.filePrefix + '_transferFile.txt'
+        transferFileSuccessfull = False
+        positionsFileSuccessfull = False
         
         try:
             with open(filepath, 'r') as fp:
@@ -102,10 +104,27 @@ class NS3Simulation():
                 # Sort the data in chronological order
                 self.data.sort(key=lambda x: x[2])
                 self.nPackets = len(self.data)
-                return True
+                transferFileSuccessfull = True
         except IOError:
             print(filepath, ' does not exist')
-            return False
+            transferFileSuccessfull = False
+
+        filepath = self.simFolderPath + self.dataFolder + '/' + self.filePrefix + '_positions.txt'
+        self.positions = []
+
+        try:
+            with open(filepath, 'r') as fp:
+                line = fp.readline()
+                while line:
+                    self.positions.append(line.split())
+                    line = fp.readline()
+                positionsFileSuccessfull = True
+        except IOError:
+            print(filepath, ' does not exist')
+            positionsFileSuccessfull = False
+
+        return transferFileSuccessfull and positionsFileSuccessfull
+                            
     
     def calculateE2eLatHist(self, binWidth, highestBin):
         # Create end to end latency vector in milliseconds

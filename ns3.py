@@ -71,7 +71,7 @@ for i in range(end, start - 1, -pace):
     if args.limitPackets:
         args.nPackets = int(((4500000+2000*args.numberOfueNodes)/60)/args.numberOfueNodes)
         if args.nPackets < 3000: args.nPackets = 3000
-    print(args.numberOfueNodes, args.nPackets)
+    #print(args.numberOfueNodes, args.nPackets)
 
     if rand:
         simSeedsContainer = NS3SimulationContainer(args.highestBin, args.dry, runningSims)

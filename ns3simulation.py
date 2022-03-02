@@ -32,8 +32,10 @@ class NS3Simulation():
         self.height = height
         self.seed = seed
         self.comment = comment
-        self.simName = gen + '-Scenario' + scenario
-        self.ns3Args =  ' --numberOfueNodes='       + str(nUEs)                 + \
+        self.simName = '4G-5G_comparison'
+        self.ns3Args =  ' --generation='            + str(gen)                  + \
+                        ' --scenario='              + str(scenario)             + \
+                        ' --numberOfueNodes='       + str(nUEs)                 + \
                         ' --radius='                + str(radius)               + \
                         ' --height='                + str(height)               + \
                         ' --seed='                  + str(seed)                 + \

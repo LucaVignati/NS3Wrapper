@@ -147,13 +147,21 @@ class Plot():
         for position in positions:
             x = int(position[1])
             y = int(position[2])
-            if position[0] == "eNB":
+            if position[0] == "eNB" and position[4] == "r":
                 marker = 'ro'
                 circle = plt.Circle((x, y), sim.radius, color='black', fill=False)
                 ax.add_patch(circle)
-            if position[0] == "UE":
+            if position[0] == "UE" and position[4] == "r":
                 marker = 'bo'
+            if position[0] == "eNB" and position[4] == "t":
+                marker = 'co'
+                circle = plt.Circle((x, y), sim.radius, color='black', fill=False)
+                ax.add_patch(circle)
+            if position[0] == "UE" and position[4] == "t":
+                marker = 'yo'
             ax.plot(x, y, marker)
+
+        ax.set_aspect('equal', adjustable='box')
         plt.title(title)
         plt.savefig(destFile)
         plt.close()

@@ -9,9 +9,9 @@ from plot import Plot
 
 def instantiateSimulation(args):
     if   args.gen == '4G':
-        simulation = NS3LTESimulation(args.gen, args.scenario, args.numberOfueNodes, args.numberOfenbNodes, args.nPackets, 1/args.packetRate, args.simTime, args.radius, args.height, args.seed, args.comment)
+        simulation = NS3LTESimulation(args.gen, args.scenario, args.traffic, args.numberOfueNodes, args.numberOfenbNodes, args.nPackets, 1/args.packetRate, args.simTime, args.radius, args.height, args.seed, args.comment)
     elif args.gen == '5G':
-        simulation = NS3NRSimulation(args.gen, args.scenario, args.numberOfueNodes, args.numberOfenbNodes, args.nPackets, 1/args.packetRate, args.simTime, args.radius, args.height, args.numerology, args.seed, args.comment)
+        simulation = NS3NRSimulation(args.gen, args.scenario, args.traffic, args.numberOfueNodes, args.numberOfenbNodes, args.nPackets, 1/args.packetRate, args.simTime, args.radius, args.height, args.numerology, args.seed, args.comment)
     return simulation
 
 parser = argparse.ArgumentParser(description='NS-3 Python wrapper')
@@ -35,6 +35,7 @@ parser.add_argument("--iterate", nargs=2, help="Specify the interval over which 
 parser.add_argument("--dry", action='store_true', help="Runs the script without running the simulator and the plots")
 parser.add_argument("--rand", type=int, help="Enables the randomization of seeds and specifies the numer of iteration needed")
 parser.add_argument("--threads", type=int, default=1, help="Specifies the maximum number of threads to be used at once")
+parser.add_argument("--traffic", action='store_true', dest='traffic', help="Enables the background traffic during the simulations")
 parser.add_argument("--maxLat", type=int, dest='highestBin', default=20, help="Specifies the maximum latency displayed in plots")
 parser.add_argument("-p", "--plot", action='store_true', dest='plot', help="Enables plot creation for each simulation output")
 parser.add_argument("-P", "--plot-summary", action='store_true', dest='plot_summary', help="Enables summary plot creation")
@@ -42,6 +43,8 @@ parser.add_argument("--plot-positions", action='store_true', dest='plot_position
 
 
 args = parser.parse_args()
+
+if args.scenario == "2": args.numberOfenbNodes = 3
 
 # OOP code
 iterate = args.iterate != None

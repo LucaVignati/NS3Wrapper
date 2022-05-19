@@ -2,6 +2,7 @@ import numpy as np
 import subprocess
 import os
 import math
+from pathlib import Path
 
 class NS3Simulation():
 
@@ -14,6 +15,7 @@ class NS3Simulation():
     e2eLatHist = None
     process = None
     data = []
+    positions = []
     discardedTime = 1.5
     
     def __init__(self,gen,scenario,traffic,nUEs,neNBs,nPackets,interPacketInterval,simTime,radius,height,seed,comment):
@@ -48,7 +50,10 @@ class NS3Simulation():
         if comment != '': self.ns3Args += ' --comment=' + comment
         self.simFolderPath = self.rootFolderPath + self.gen + '/' + str(self.nUEs) + ' UEs'
         
-    def run(self,gdb=False):
+    def run(self,gdb=False, forced=False):
+        if Path(self.filepath).is_file() and not forced:
+            return None
+
         if gdb:
             self.wafArgs = [self.programName, '--command-template=gdb -ex=r --args %s ' + self.ns3Args, '--run', self.simName]
         else:
@@ -78,12 +83,11 @@ class NS3Simulation():
     def parseOutput(self, truncate):
         self.data = []
         self.checkFolderStructure()
-        filepath = self.simFolderPath + self.dataFolder + '/' + self.filePrefix + '_transferFile.txt'
         transferFileSuccessfull = False
         positionsFileSuccessfull = False
         
         try:
-            with open(filepath, 'r') as fp:
+            with open(self.filepath, 'r') as fp:
                 # Parse the rest of the file
                 packetNumber = 0
                 ueId = 0
@@ -107,22 +111,27 @@ class NS3Simulation():
                 self.nPackets = len(self.data)
                 transferFileSuccessfull = True
         except IOError:
-            print(filepath, ' does not exist')
+            if Path(self.filepath).is_file():
+                print("Error occurred opening ", self.filepath)
+            else:
+                print(self.filepath, ' does not exist')
             transferFileSuccessfull = False
+            return False
 
-        filepath = self.simFolderPath + self.dataFolder + '/' + self.filePrefix + '_positions.txt'
+        filepath_positions = self.simFolderPath + self.dataFolder + '/' + self.filePrefix + '_positions.txt'
         self.positions = []
 
         try:
-            with open(filepath, 'r') as fp:
+            with open(filepath_positions, 'r') as fp:
                 line = fp.readline()
                 while line:
                     self.positions.append(line.split())
                     line = fp.readline()
                 positionsFileSuccessfull = True
         except IOError:
-            print(filepath, ' does not exist')
+            print(filepath_positions, ' does not exist')
             positionsFileSuccessfull = False
+            return False
 
         return transferFileSuccessfull and positionsFileSuccessfull
                             
@@ -219,6 +228,7 @@ class NS3LTESimulation(NS3Simulation):
         self.filePrefix = ''
         if int(scenario) > 1: self.filePrefix = 'eNB' + str(neNBs) + '-'
         self.filePrefix += 'r' + str(radius) + '-s' + str(seed) + '-t' + str(self.simTime) + '-' + comment
+        self.filepath = self.simFolderPath + self.dataFolder + '/' + self.filePrefix + '_transferFile.txt'
 
 class NS3NRSimulation(NS3Simulation):
 
@@ -227,5 +237,6 @@ class NS3NRSimulation(NS3Simulation):
         self.filePrefix = ''
         if int(scenario) > 1: self.filePrefix = 'gNB' + str(neNBs) + '-'
         self.filePrefix += 'r' + str(radius) + '-num' + str(numerology) + '-s' + str(seed) + '-t' + str(self.simTime) + '-' + comment
+        self.filepath = self.simFolderPath + self.dataFolder + '/' + self.filePrefix + '_transferFile.txt'
         self.ns3Args += ' --numerology=' + str(numerology)
         self.numerology = numerology

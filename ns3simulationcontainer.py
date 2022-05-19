@@ -20,17 +20,15 @@ class NS3SimulationContainer():
     def add(self, simulation):
         self.simList.append(simulation)
 
-    def run(self, gdb, nThreads, last):
+    def run(self, gdb, forced, nThreads, last):
         for simulation in self.simList:
             self.busyWait(nThreads)
             self.runningSims.append(simulation)
             if not self.dry:
-                simulation.run(gdb)
+                simulation.run(gdb, forced)
             time.sleep(0.2)
         if last:
             self.busyWait(1)
-        sim = self.simList[0]
-        self.nWindows = int(sim.simTime/(self.windowSize/1000*self.overlap))
 
     def busyWait(self, maxThreads):
         while len(self.runningSims) >= maxThreads:
@@ -57,23 +55,31 @@ class NS3SimulationContainer():
         else:
             self.simFailed += 1
 
-    def writeAverageSimFile(self):
+    def writeAverageSimFiles(self):
         self.data = []
+        self.positions = []
         self.avgSim = copy.copy(self.simList[0])
         self.avgSim.filePrefix = self.avgSim.filePrefixNoSeed() + 'avg' + str(len(self.simList))
         self.avgSimFilepath = self.avgSim.simFolderPath + self.avgSim.dataFolder + '/' + self.avgSim.filePrefix + '_transferFile.txt'
+        self.avgSimFilepathPositions = self.avgSim.simFolderPath + self.avgSim.dataFolder + '/' + self.avgSim.filePrefix + '_positions.txt'
         
-        if not self.dry:
-            for simulation in self.simList:
-                self.data += simulation.data
-            self.data.sort(key=lambda x: x[2])
+        #if not self.dry:
+        for simulation in self.simList:
+            self.data += simulation.data
+            self.positions += simulation.positions
+        
+        self.data.sort(key=lambda x: x[2])
+        
+        with open(self.avgSimFilepath, 'w') as f:
+            for line in self.data:
+                f.write(str(line[0]) + ' ' + str(line[1]) + ' ' + str(line[2]) + '\n')
             
-            with open(self.avgSimFilepath, 'w') as f:
-                for line in self.data:
-                    f.write(str(line[0]) + ' ' + str(line[1]) + ' ' + str(line[2]) + '\n')
+        with open(self.avgSimFilepathPositions, 'w') as f:
+            for line in self.positions:
+                f.write(str(line[0]) + ' ' + str(line[1]) + ' ' + str(line[2]) + ' ' + str(line[3]) + ' ' + str(line[4]) + '\n')
 
     def getAverageSim(self):
-        self.writeAverageSimFile()
+        self.writeAverageSimFiles()
         self.avgSim.parseOutput(truncate=False)
         self.avgSim.calculateE2eLatHist(self.binWidth, self.highestBin)
         self.avgSim.calculateCumulativeLat(self.binWidth, self.highestBin)

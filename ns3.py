@@ -6,12 +6,13 @@ import math
 from ns3simulation import NS3Simulation, NS3LTESimulation, NS3NRSimulation
 from ns3simulationcontainer import NS3SimulationContainer
 from plot import Plot
+from pathlib import Path
 
 def instantiateSimulation(args):
     if   args.gen == '4G':
-        simulation = NS3LTESimulation(args.gen, args.scenario, args.traffic, args.numberOfueNodes, args.numberOfenbNodes, args.nPackets, 1/args.packetRate, args.simTime, args.radius, args.height, args.seed, args.comment)
+        simulation = NS3LTESimulation(args.gen, args.scenario, args.traffic, args.numberOfueNodes, args.numberOfenbNodes, args.nPackets, 1/args.packetRate, args.simTime, args.radius, args.height, args.seed, args.comment, root_folder)
     elif args.gen == '5G':
-        simulation = NS3NRSimulation(args.gen, args.scenario, args.traffic, args.numberOfueNodes, args.numberOfenbNodes, args.nPackets, 1/args.packetRate, args.simTime, args.radius, args.height, args.numerology, args.seed, args.comment)
+        simulation = NS3NRSimulation(args.gen, args.scenario, args.traffic, args.numberOfueNodes, args.numberOfenbNodes, args.nPackets, 1/args.packetRate, args.simTime, args.radius, args.height, args.numerology, args.seed, args.comment, root_folder)
     return simulation
 
 parser = argparse.ArgumentParser(description='NS-3 Python wrapper')
@@ -25,12 +26,12 @@ parser.add_argument("--time", type=int, dest='simTime', default=6, help="Total s
 parser.add_argument("--limitPackets", action='store_true', help="Limit the total number of packets for each simulation to that of the shortest simulation")
 parser.add_argument("--packets", type=int, dest='nPackets', help="Number of packets transmitted by each UE in each simulation")
 parser.add_argument("--packetRate", type=int, default=1500, help="Frequency of packet transmission in Hz")
-parser.add_argument("--radius", type=int, dest='radius', default=2, help="Radius of the circle where the UEs are randomly placed")
+parser.add_argument("--radius", type=int, dest='radius', default=150, help="Radius of the circle where the UEs are randomly placed")
 parser.add_argument("--height", type=float, dest='height', default=1.5, help="Height of the UEs")
 parser.add_argument("--num", type=int, dest='numerology', default=2, help="Value defining the subcarrier spaceing and symbol lenght")
 parser.add_argument("--seed", type=int, dest='seed', default=0, help="Seed of rand function to use in the simulation")
 parser.add_argument("--seeds", type=str, help="Path to file containing the seeds to use. Only relevant if combined with rand")
-parser.add_argument("--comment", dest='comment', default='', help="Height of the UEs")
+parser.add_argument("--comment", dest='comment', default='', help="")
 parser.add_argument("--gdb", action='store_true', help="Run the program under gdb")
 parser.add_argument("--iterate", nargs=2, help="Specify the interval over which iterate")
 parser.add_argument("--dry", action='store_true', help="Runs the script without running the simulator and the plots")
@@ -42,15 +43,34 @@ parser.add_argument("-p", "--plot", action='store_true', dest='plot', help="Enab
 parser.add_argument("-P", "--plot-summary", action='store_true', dest='plot_summary', help="Enables summary plot creation")
 parser.add_argument("--plot-positions", action='store_true', dest='plot_positions', help="Enables the plot of UE and gNB/eNB positions")
 parser.add_argument("-f", "--force-rerun", action='store_true', dest='forced', help="Forces every simulation to run, regardless of the presence of previous results overwriting them")
+parser.add_argument("--no-wait", action='store_true', dest='no_wait', help='Disables the waiting times between simulation starts')
+parser.add_argument("--path", type=str, default='', help="Path to the root folder where to place graphs and data")
 
 
 args = parser.parse_args()
 
 if args.scenario == "2": args.numberOfenbNodes = 3
 
+if args.path == '':
+    root_folder = Path('graphs')
+else:
+    root_folder = Path(args.path)
+    folder_4G = Path(root_folder, '4G')
+    folder_5G = Path(root_folder, '5G')
+    folder_statistics = Path(root_folder, 'statistics')
+    folder_summary = Path(root_folder, 'summary')
+
+if not root_folder.exists():
+    root_folder.mkdir()
+    folder_4G.mkdir()
+    folder_5G.mkdir()
+    folder_statistics.mkdir()
+    folder_summary.mkdir()
+
 # OOP code
 iterate = args.iterate != None
 rand = args.rand != None
+args.seeds = Path(root_folder, "summary", args.gen + "-Scenario" + args.scenario + "-rand" + str(args.rand) + ".txt")
 
 if iterate:
     it   = args.iterate[0]
@@ -64,16 +84,18 @@ else:
 
 if rand:
     seeds = []
-    if args.seeds != None:
+    if args.seeds.exists():
         with open(args.seeds, 'r') as file:
-            for _ in range(args.rand):
-                seeds.append(file.readline()[:-1])
+            while True:
+                seed = file.readline()[:-1]
+                if seed == '': break
+                seeds.append(seed)
+            args.rand = len(seeds)
     elif args.dry == False:
         for _ in range(args.rand):
             seeds.append(random.randint(1, 1000))
 
-        seedsFile = 'graphs/' + 'summary/' + args.gen + '-Scenario' + str(args.scenario) + '-rand' + str(args.rand) + '.txt'
-        with open(seedsFile, 'w') as file:
+        with open(args.seeds, 'w') as file:
             for seed in seeds:
                 file.write(str(seed) + '\n')
 else:
@@ -98,7 +120,7 @@ for i in range(end, start - 1, -pace):
             simSeedsContainer.add(instantiateSimulation(args))
 
         if not args.dry:
-            simSeedsContainer.run(args.gdb, args.forced, args.threads, i == start)
+            simSeedsContainer.run(args.gdb, args.forced, not args.no_wait, args.threads, i == start)
         
         simContainers.append(simSeedsContainer)
 
@@ -112,8 +134,14 @@ for i in range(len(simContainers), 0, -1):
     simulationContainer.simFailed += simContainer.simFailed
 
     if args.plot:
-        plot = Plot(simContainer)
-        plot.everyGraph()
+        for simCont in simContainers:
+            plot = Plot(simCont)
+            plot.everyGraph()
+    
+    if args.plot_positions:
+        for simCont in simContainers:
+            plot = Plot(simCont)
+            plot.positions()
 
 # Run the simulation with optional gdb debugger
 if not rand:
@@ -129,7 +157,7 @@ if args.plot_summary:
     plot.nUEsSummaryGraph(start, end, args.rand)
     plot.packetStatistics(start, end, pace, args.rand)
 
-if args.plot_positions:
+if args.plot_positions and not rand:
     plot.positions()
 
 print("All simulations ended")

@@ -6,10 +6,9 @@ from pathlib import Path
 
 class NS3Simulation():
 
-    rootFolderPath = 'graphs/'
-    dataFolder = '/data'
-    imagesFolder = '/images'
-    programName = './waf'
+    dataFolder = 'data'
+    imagesFolder = 'images'
+    programName = './ns3'
     filePrefix = ''
     plotPrefix = ''
     e2eLatHist = None
@@ -18,7 +17,7 @@ class NS3Simulation():
     positions = []
     discardedTime = 1.5
     
-    def __init__(self,gen,scenario,traffic,nUEs,neNBs,nPackets,interPacketInterval,simTime,radius,height,seed,comment):
+    def __init__(self,gen,scenario,traffic,nUEs,neNBs,nPackets,interPacketInterval,simTime,radius,height,seed,comment,path):
         self.gen = gen
         self.scenario = scenario
         self.nUEs = nUEs
@@ -43,12 +42,14 @@ class NS3Simulation():
                         ' --seed='                  + str(seed)                 + \
                         ' --simTime='               + str(self.simTime)         + \
                         ' --nPackets='              + str(self.nPackets)        + \
-                        ' --interPacketInterval='   + str(interPacketInterval)
+                        ' --interPacketInterval='   + str(interPacketInterval)  + \
+                        ' --path='                  + str(path)
 
         if traffic: self.ns3Args += ' --traffic'
         if int(scenario) > 1: self.ns3Args += ' --numberOfenbNodes=' + str(neNBs)
         if comment != '': self.ns3Args += ' --comment=' + comment
-        self.simFolderPath = self.rootFolderPath + self.gen + '/' + str(self.nUEs) + ' UEs'
+        self.rootFolderPath = path
+        self.simFolderPath = Path(self.rootFolderPath, self.gen, str(self.nUEs) + ' UEs')
         
     def run(self,gdb=False, forced=False):
         if Path(self.filepath).is_file() and not forced:
@@ -57,7 +58,7 @@ class NS3Simulation():
         if gdb:
             self.wafArgs = [self.programName, '--command-template=gdb -ex=r --args %s ' + self.ns3Args, '--run', self.simName]
         else:
-            self.wafArgs = [self.programName, '--run', self.simName + " " + self.ns3Args]
+            self.wafArgs = [self.programName, 'run', self.simName + " " + self.ns3Args]
 
         self.checkFolderStructure()
         self.process = subprocess.Popen(self.wafArgs)
@@ -70,15 +71,15 @@ class NS3Simulation():
             return self.process.poll() == None
 
     def checkFolderStructure(self):
-        path = self.rootFolderPath + self.gen
+        path = Path(self.rootFolderPath, self.gen)
         if os.path.isdir(path):
-            path += '/' + str(self.nUEs) + ' UEs'
+            path = Path(path, str(self.nUEs) + ' UEs')
             if not os.path.isdir(path):
                 os.mkdir(path)
-            if not os.path.isdir(path + self.dataFolder):
-                os.mkdir(path + self.dataFolder)
-            if not os.path.isdir(path + self.imagesFolder):
-                os.mkdir(path + self.imagesFolder)
+            if not os.path.isdir(Path(path, self.dataFolder)):
+                os.mkdir(Path(path, self.dataFolder))
+            if not os.path.isdir(Path(path, self.imagesFolder)):
+                os.mkdir(Path(path, self.imagesFolder))
     
     def parseOutput(self, truncate):
         self.data = []
@@ -95,7 +96,7 @@ class NS3Simulation():
                 while line:
                     dataLine = []
                     for n in line.split():
-                        dataLine.append(float(n))
+                        dataLine.append(int(n))
                     time = dataLine[1]/1e6
                     if (packetNumber > 1000 and packetNumber < (self.simTime-1)*1000 and time < self.simTime) or not truncate:
                         self.data.append(dataLine)
@@ -107,7 +108,7 @@ class NS3Simulation():
                     line = fp.readline()
                 
                 # Sort the data in chronological order
-                self.data.sort(key=lambda x: x[2])
+                self.data.sort(key=lambda x: x[1])
                 self.nPackets = len(self.data)
                 transferFileSuccessfull = True
         except IOError:
@@ -118,7 +119,7 @@ class NS3Simulation():
             transferFileSuccessfull = False
             return False
 
-        filepath_positions = self.simFolderPath + self.dataFolder + '/' + self.filePrefix + '_positions.txt'
+        filepath_positions = Path(self.simFolderPath, self.dataFolder, self.filePrefix + '_positions.txt')
         self.positions = []
 
         try:
@@ -143,6 +144,8 @@ class NS3Simulation():
             val = t[2]/1000
             if val > 0:
                 e2eLatency.append(val)
+            elif val < 0:
+                e2eLatency.append(2000)
 
         # Calculate the number of bins of the histogram
         nBins = int(highestBin/binWidth)
@@ -206,15 +209,20 @@ class NS3Simulation():
             print('Run "parseOutput()" and "calculateE2eLatHist()" before running "calculatePacketStatistics()"')
             return
         
-        self.latePackets = 0
+        self.downlinkLatePackets = 0
+        self.uplinkLatePackets = 0
         for t in self.data:
-            if t[2] > lateTreshold:
-                self.latePackets += 1
+            if t[2] == 18446744073709551615:
+                self.uplinkLatePackets += 1
+            elif t[2] > lateTreshold*1000:
+                self.downlinkLatePackets += 1
+            
 
         self.droppedPackets = self.nPackets - self.receivedPackets
         self.rxPercentage = self.receivedPackets / self.nPackets
         self.droppedPercentage = self.droppedPackets / self.nPackets
-        self.latePercentage = self.latePackets / self.nPackets
+        self.downlinkLatePercentage = self.downlinkLatePackets / self.nPackets
+        self.uplinkLatePercentage = self.uplinkLatePackets / self.nPackets
 
     def filePrefixNoSeed(self):
         s = self.filePrefix 
@@ -223,20 +231,20 @@ class NS3Simulation():
 
 class NS3LTESimulation(NS3Simulation):
 
-    def __init__(self,gen,scenario,traffic,nUEs,neNBs,nPackets,interPacketInterval,simTime,radius,height,seed,comment):
-        NS3Simulation.__init__(self,gen,scenario,traffic,nUEs,neNBs,nPackets,interPacketInterval,simTime,radius,height,seed,comment)
+    def __init__(self,gen,scenario,traffic,nUEs,neNBs,nPackets,interPacketInterval,simTime,radius,height,seed,comment,path):
+        NS3Simulation.__init__(self,gen,scenario,traffic,nUEs,neNBs,nPackets,interPacketInterval,simTime,radius,height,seed,comment,path)
         self.filePrefix = ''
         if int(scenario) > 1: self.filePrefix = 'eNB' + str(neNBs) + '-'
         self.filePrefix += 'r' + str(radius) + '-s' + str(seed) + '-t' + str(self.simTime) + '-' + comment
-        self.filepath = self.simFolderPath + self.dataFolder + '/' + self.filePrefix + '_transferFile.txt'
+        self.filepath = Path(self.simFolderPath, self.dataFolder, self.filePrefix + '_transferFile.txt')
 
 class NS3NRSimulation(NS3Simulation):
 
-    def __init__(self,gen,scenario,traffic,nUEs,neNBs,nPackets,interPacketInterval,simTime,radius,height,numerology,seed,comment):
-        NS3Simulation.__init__(self,gen,scenario,traffic,nUEs,neNBs,nPackets,interPacketInterval,simTime,radius,height,seed,comment)
+    def __init__(self,gen,scenario,traffic,nUEs,neNBs,nPackets,interPacketInterval,simTime,radius,height,numerology,seed,comment,path):
+        NS3Simulation.__init__(self,gen,scenario,traffic,nUEs,neNBs,nPackets,interPacketInterval,simTime,radius,height,seed,comment,path)
         self.filePrefix = ''
         if int(scenario) > 1: self.filePrefix = 'gNB' + str(neNBs) + '-'
         self.filePrefix += 'r' + str(radius) + '-num' + str(numerology) + '-s' + str(seed) + '-t' + str(self.simTime) + '-' + comment
-        self.filepath = self.simFolderPath + self.dataFolder + '/' + self.filePrefix + '_transferFile.txt'
+        self.filepath = Path(self.simFolderPath, self.dataFolder, self.filePrefix + '_transferFile.txt')
         self.ns3Args += ' --numerology=' + str(numerology)
         self.numerology = numerology

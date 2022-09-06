@@ -1,5 +1,6 @@
 import time
 import copy
+from pathlib import Path
 
 class NS3SimulationContainer():
 
@@ -20,13 +21,14 @@ class NS3SimulationContainer():
     def add(self, simulation):
         self.simList.append(simulation)
 
-    def run(self, gdb, forced, nThreads, last):
+    def run(self, gdb, forced, wait, nThreads, last):
         for simulation in self.simList:
             self.busyWait(nThreads)
             self.runningSims.append(simulation)
             if not self.dry:
                 simulation.run(gdb, forced)
-            time.sleep(0.2)
+            if wait:
+                time.sleep(2)
         if last:
             self.busyWait(1)
 
@@ -60,15 +62,15 @@ class NS3SimulationContainer():
         self.positions = []
         self.avgSim = copy.copy(self.simList[0])
         self.avgSim.filePrefix = self.avgSim.filePrefixNoSeed() + 'avg' + str(len(self.simList))
-        self.avgSimFilepath = self.avgSim.simFolderPath + self.avgSim.dataFolder + '/' + self.avgSim.filePrefix + '_transferFile.txt'
-        self.avgSimFilepathPositions = self.avgSim.simFolderPath + self.avgSim.dataFolder + '/' + self.avgSim.filePrefix + '_positions.txt'
+        self.avgSimFilepath = Path(self.avgSim.simFolderPath, self.avgSim.dataFolder, self.avgSim.filePrefix + '_transferFile.txt')
+        self.avgSimFilepathPositions = Path(self.avgSim.simFolderPath, self.avgSim.dataFolder, self.avgSim.filePrefix + '_positions.txt')
         
         #if not self.dry:
         for simulation in self.simList:
             self.data += simulation.data
             self.positions += simulation.positions
         
-        self.data.sort(key=lambda x: x[2])
+        self.data.sort(key=lambda x: x[1])
         
         with open(self.avgSimFilepath, 'w') as f:
             for line in self.data:

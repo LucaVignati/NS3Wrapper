@@ -154,7 +154,7 @@ class NS3Simulation():
         e2eLatHist, _ = np.histogram(e2eLatency, range=(0, highestBin), bins=nBins)
 
         # Store the information in the class instance
-        self.e2eLatHist = e2eLatHist/len(e2eLatency)
+        self.e2eLatHist = e2eLatHist/self.nPackets
 
         # Store the number of received packets
         self.receivedPackets = len(e2eLatency)

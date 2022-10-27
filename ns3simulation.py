@@ -49,7 +49,7 @@ class NS3Simulation():
         if int(scenario) > 1: self.ns3Args += ' --numberOfenbNodes=' + str(neNBs)
         if comment != '': self.ns3Args += ' --comment=' + comment
         self.rootFolderPath = path
-        self.simFolderPath = Path(self.rootFolderPath, self.gen, str(self.nUEs) + ' UEs')
+        self.simFolderPath = Path(self.rootFolderPath, "simulations", str(self.nUEs) + ' UEs')
         
     def run(self,gdb=False, forced=False):
         if Path(self.filepath).is_file() and not forced:
@@ -71,7 +71,7 @@ class NS3Simulation():
             return self.process.poll() == None
 
     def checkFolderStructure(self):
-        path = Path(self.rootFolderPath, self.gen)
+        path = Path(self.rootFolderPath, "simulations")
         if os.path.isdir(path):
             path = Path(path, str(self.nUEs) + ' UEs')
             if not os.path.isdir(path):

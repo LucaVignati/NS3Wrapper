@@ -80,10 +80,10 @@ class NS3SimulationContainer():
             for line in self.positions:
                 f.write(str(line[0]) + ' ' + str(line[1]) + ' ' + str(line[2]) + ' ' + str(line[3]) + ' ' + str(line[4]) + '\n')
 
-    def getAverageSim(self):
+    def getAverageSim(self, highestBin):
         self.writeAverageSimFiles()
         self.avgSim.parseOutput(truncate=False)
-        self.avgSim.calculateE2eLatHist(self.binWidth, self.highestBin)
-        self.avgSim.calculateCumulativeLat(self.binWidth, self.highestBin)
+        self.avgSim.calculateE2eLatHist(self.binWidth, highestBin)
+        self.avgSim.calculateCumulativeLat(self.binWidth, highestBin)
         self.avgSim.calculatePacketStatistics(self.lateThreshold)
         return self.avgSim

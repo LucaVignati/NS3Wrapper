@@ -84,12 +84,12 @@ class Plot():
         if not holdOn:    
             plt.close()
 
-    def nUEsSummaryGraph(self, start, end, seeds):
+    def nUEsSummaryGraph(self, start, end, seeds, seeds_num):
         legend = []
         c = self.container
         simList = c.simList
         sim = simList[0]
-        destFile = Path(sim.rootFolderPath, 'summary', sim.gen + '-' + sim.filePrefix + '_nUEs(' + str(start) + ':' + str(end) + ')SummaryPlot-' + str(c.highestBin) + 'ms.png')
+        destFile = Path(sim.rootFolderPath, 'summary-' + str(seeds_num).zfill(2), sim.gen + '-' + sim.filePrefix + '_nUEs(' + str(start) + ':' + str(end) + ')SummaryPlot-' + str(c.highestBin) + 'ms.png')
         for s in simList:
             self.cumulativeLat(s, save=False, holdOn=True)
             legend.append(str(s.nUEs) + ' UEs')
@@ -108,7 +108,7 @@ class Plot():
         plt.savefig(str(destFile))
         plt.close()
 
-    def packetStatistics(self, start, end, pace, seeds):
+    def packetStatistics(self, start, end, pace, seeds, seeds_num):
         uplinkLate = []
         downlinkLate = []
         lost = []
@@ -116,7 +116,7 @@ class Plot():
         ticks = range(start, end + 1, pace)
         simList = c.simList
         sim = simList[0]
-        destFile = Path(sim.rootFolderPath, 'statistics', sim.gen + '-' + sim.filePrefix + '_nUEs(' + str(start) + ':' + str(end) + ')StatisticsPlot' + '.png')
+        destFile = Path(sim.rootFolderPath, 'summary-' + str(seeds_num).zfill(2), sim.gen + '-' + sim.filePrefix + '_nUEs(' + str(start) + ':' + str(end) + ')StatisticsPlot' + '.png')
         for s in simList:
             uplinkLate.append(s.uplinkLatePercentage)
             downlinkLate.append(s.downlinkLatePercentage)
